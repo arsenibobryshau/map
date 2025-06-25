@@ -52,7 +52,7 @@ df_filt["barva"] = df_filt["PŘÍZNAK"].map(priznak2barva)
 # === 3. Zobrazení mapy ===
 st.subheader(f"Počet zobrazených bodů: {len(df_filt)}")
 st.pydeck_chart(pdk.Deck(
-    map_style='mapbox://styles/mapbox/streets-v11',
+    map_style='light',
     initial_view_state=pdk.ViewState(
         latitude=49.8,
         longitude=15.5,
