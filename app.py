@@ -31,9 +31,9 @@ vybrane = st.multiselect("Filtr PŘÍZNAK", priznaky, default=priznaky)
 # === 2a. Přiřazení barev jednotlivým příznakům ===
 # Definuj 11 barev (můžeš upravit podle vkusu)
 barvy = [
-    [200, 30, 0, 160],    # červená
+    [0, 180, 60, 160],    # červená
     [0, 120, 200, 160],   # modrá
-    [0, 180, 60, 160],    # zelená
+    [200, 30, 0, 160],    # zelená
     [255, 140, 0, 160],   # oranžová
     [160, 0, 200, 160],   # fialová
     [255, 215, 0, 160],   # žlutá
