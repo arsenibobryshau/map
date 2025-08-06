@@ -84,7 +84,7 @@ if (df_filt["symbol"] == "hotove").any():
     )
 
 st.pydeck_chart(pdk.Deck(
-    map_style='light',,
+    map_style='light',
     initial_view_state=pdk.ViewState(
         latitude=49.8,
         longitude=15.5,
@@ -110,3 +110,4 @@ nenalezeno = df[df["lat"].isnull() | df["lon"].isnull()]
 if not nenalezeno.empty:
     st.warning(f"Adresy, které se nepodařilo najít ({len(nenalezeno)}):")
     st.write(nenalezeno[["NÁZEV", "Adresa", "PŘÍZNAK"]]) 
+
