@@ -1,4 +1,3 @@
-
 import pandas as pd
 import streamlit as st
 import pydeck as pdk
@@ -6,10 +5,10 @@ import os
 import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Interaktivní mapa adres", layout="wide")
-st.title("Interaktivní mapa adres - 25.06.2025")
+st.title("Interaktivní mapa adres - 06.08.2025, platby Hotově černý kroužek")
 
 # === 1. Načtení dat ===
-CSV_SOUBOR = "kombinovane_data_aktualizovane.csv"
+CSV_SOUBOR = "DATA_A_RINO.CSV"
 ODDELENI = ";"
 KODOVANI = "utf-8"
 
@@ -24,13 +23,11 @@ df["lon"] = pd.to_numeric(df["lon"], errors='coerce')
 df.loc[df["lat"] == 0, "lat"] = None
 df.loc[df["lon"] == 0, "lon"] = None
 
-
 # === 2. Filtrování podle PŘÍZNAK ===
 priznaky = sorted(df["PŘÍZNAK"].dropna().unique())
 vybrane = st.multiselect("Filtr PŘÍZNAK", priznaky, default=priznaky)
 
 # === 2a. Přiřazení barev jednotlivým příznakům ===
-# Definuj 11 barev (můžeš upravit podle vkusu)
 barvy = [
     [0, 180, 60, 160],    # červená
     [0, 120, 200, 160],   # modrá
@@ -50,8 +47,35 @@ priznak2barva = {p: barvy[i % len(barvy)] for i, p in enumerate(priznaky)}
 df_filt = df[df["PŘÍZNAK"].isin(vybrane) & df["lat"].notnull() & df["lon"].notnull()].copy()
 df_filt["barva"] = df_filt["PŘÍZNAK"].map(priznak2barva)
 
-# === 3. Zobrazení mapy ===
+# === 3. Zobrazení hlavní mapy ===
 st.subheader(f"Počet zobrazených bodů: {len(df_filt)}")
+layers = []
+layers.append(
+    pdk.Layer(
+        'ScatterplotLayer',
+        data=df_filt[df_filt["FORMA_UHRADY"] != "Hotově"],
+        get_position='[lon, lat]',
+        get_color='barva',
+        get_radius=500,
+        radiusMinPixels=5,
+        radiusMaxPixels=30,
+        pickable=True,
+    )
+)
+if (df_filt["FORMA_UHRADY"] == "Hotově").any():
+    layers.append(
+        pdk.Layer(
+            'ScatterplotLayer',
+            data=df_filt[df_filt["FORMA_UHRADY"] == "Hotově"],
+            get_position='[lon, lat]',
+            get_color='[0,0,0,255]',
+            get_radius=700,
+            radiusMinPixels=7,
+            radiusMaxPixels=35,
+            pickable=True,
+        )
+    )
+
 st.pydeck_chart(pdk.Deck(
     map_style='light',
     initial_view_state=pdk.ViewState(
@@ -60,19 +84,8 @@ st.pydeck_chart(pdk.Deck(
         zoom=7,
         pitch=0,
     ),
-    layers=[
-        pdk.Layer(
-            'ScatterplotLayer',
-            data=df_filt,
-            get_position='[lon, lat]',
-            get_color='barva',
-            get_radius=500,
-            radiusMinPixels=5,
-            radiusMaxPixels=30,
-            pickable=True,
-        ),
-    ],
-    tooltip={"text": "{NÁZEV}\n{Adresa}\nPŘÍZNAK: {PŘÍZNAK}\nCF: {CF}"}
+    layers=layers,
+    tooltip={"text": "{NÁZEV}\n{Adresa}\nPŘÍZNAK: {PŘÍZNAK}\nCF: {CF}\nFORMA ÚHRADY: {FORMA_UHRADY}"}
 ))
 
 # === 3a. Legenda barev ===
@@ -87,4 +100,31 @@ components.html(legend_html, height=40 + 30 * ((len(priznaky)+4)//5))
 nenalezeno = df[df["lat"].isnull() | df["lon"].isnull()]
 if not nenalezeno.empty:
     st.warning(f"Adresy, které se nepodařilo najít ({len(nenalezeno)}):")
-    st.write(nenalezeno[["NÁZEV", "Adresa", "PŘÍZNAK"]]) 
+    st.write(nenalezeno[["NÁZEV", "Adresa", "PŘÍZNAK"]])
+
+# === 5. Druhá mapa: pouze Hotově ===
+hotove_df = df[(df["FORMA_UHRADY"] == "Hotově") & df["lat"].notnull() & df["lon"].notnull()]
+if not hotove_df.empty:
+    st.subheader(f"Mapa pouze pro Hotově ({len(hotove_df)})")
+    st.pydeck_chart(pdk.Deck(
+        map_style='light',
+        initial_view_state=pdk.ViewState(
+            latitude=49.8,
+            longitude=15.5,
+            zoom=7,
+            pitch=0,
+        ),
+        layers=[
+            pdk.Layer(
+                'ScatterplotLayer',
+                data=hotove_df,
+                get_position='[lon, lat]',
+                get_color='[0,0,0,120]',  # průhledná černá
+                get_radius=700,
+                radiusMinPixels=7,
+                radiusMaxPixels=35,
+                pickable=True,
+            )
+        ],
+        tooltip={"text": "{NÁZEV}\n{Adresa}\nPŘÍZNAK: {PŘÍZNAK}\nCF: {CF}\nFORMA ÚHRADY: {FORMA_UHRADY}"}
+    )) 
