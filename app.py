@@ -25,14 +25,13 @@ df.loc[df["lon"] == 0, "lon"] = None
 
 # === Nový sloupec pro typ symbolu ===
 df["symbol"] = "kruh"
-df.loc[df["FORMA_UHRADY"].str.lower() == "hotově", "symbol"] = "krizek"
+df.loc[df["FORMA_UHRADY"] == "Hotově", "symbol"] = "hotove"
 
 # === 2. Filtrování podle PŘÍZNAK ===
 priznaky = sorted(df["PŘÍZNAK"].dropna().unique())
 vybrane = st.multiselect("Filtr PŘÍZNAK", priznaky, default=priznaky)
 
 # === 2a. Přiřazení barev jednotlivým příznakům ===
-# Původní barvy (doplňte přesně vaše, pokud jsou jiné)
 barvy = [
     [0, 180, 60, 160],    # zelená
     [0, 120, 200, 160],   # modrá
@@ -69,24 +68,23 @@ layers = [
     ),
 ]
 
-# Vrstva pro hotově (křížek jako text)
-if (df_filt["symbol"] == "krizek").any():
+# Vrstva pro hotově (černý bod, větší průměr)
+if (df_filt["symbol"] == "hotove").any():
     layers.append(
         pdk.Layer(
-            "TextLayer",
-            data=df_filt[df_filt["symbol"] == "krizek"],
+            "ScatterplotLayer",
+            data=df_filt[df_filt["symbol"] == "hotove"],
             get_position='[lon, lat]',
-            get_text='"✖"',
             get_color='[0,0,0,255]',
-            get_size=24,
-            get_angle=0,
-            get_alignment_baseline='bottom',
+            get_radius=900,
+            radiusMinPixels=8,
+            radiusMaxPixels=40,
             pickable=True,
         )
     )
 
 st.pydeck_chart(pdk.Deck(
-    map_style='mapbox://styles/mapbox/light-v9',
+    map_style='mapbox://styles/mapbox/streets-v11',
     initial_view_state=pdk.ViewState(
         latitude=49.8,
         longitude=15.5,
@@ -103,7 +101,7 @@ legend_html = '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20
 for p in priznaky:
     legend_html += f'<div style="display:flex;align-items:center;"><div style="width:18px;height:18px;border-radius:50%;background:{barva2hex(priznak2barva[p])};margin-right:6px;"></div>{p}</div>'
 # Přidej legendu pro hotově
-legend_html += '<div style="display:flex;align-items:center;font-size:22px;"><span style="margin-right:6px;">✖</span>Hotově (forma úhrady)</div>'
+legend_html += '<div style="display:flex;align-items:center;font-size:22px;"><span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:#000;margin-right:6px;"></span>Hotově (forma úhrady)</div>'
 legend_html += '</div>'
 components.html(legend_html, height=40 + 30 * ((len(priznaky)+5)//5))
 
