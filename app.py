@@ -52,7 +52,7 @@ df_filt["barva"] = df_filt["PŘÍZNAK"].map(priznak2barva)
 # === 3. Zobrazení mapy ===
 st.subheader(f"Počet zobrazených bodů: {len(df_filt)}")
 st.pydeck_chart(pdk.Deck(
-    map_style='mapbox://styles/mapbox/streets-v11',
+    map_style='mapbox://styles/mapbox/light-v10',
     initial_view_state=pdk.ViewState(
         latitude=49.8,
         longitude=15.5,
@@ -87,3 +87,4 @@ nenalezeno = df[df["lat"].isnull() | df["lon"].isnull()]
 if not nenalezeno.empty:
     st.warning(f"Adresy, které se nepodařilo najít ({len(nenalezeno)}):")
     st.write(nenalezeno[["NÁZEV", "Adresa", "PŘÍZNAK"]]) 
+
