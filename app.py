@@ -5,7 +5,7 @@ import os
 import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Interaktivní mapa adres", layout="wide")
-st.title("Interaktivní mapa adres - 25.06.2025")
+st.title("Interaktivní mapa adres - 06.08.2025, platby Hotově černý kroužek")
 
 # === 1. Načtení dat ===
 CSV_SOUBOR = "DATA_A_RINO.csv"
@@ -103,6 +103,7 @@ nenalezeno = df[df["lat"].isnull() | df["lon"].isnull()]
 if not nenalezeno.empty:
     st.warning(f"Adresy, které se nepodařilo najít ({len(nenalezeno)}):")
     st.write(nenalezeno[["NÁZEV", "Adresa", "PŘÍZNAK"]]) 
+
 
 
 
