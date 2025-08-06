@@ -8,7 +8,7 @@ st.set_page_config(page_title="Interaktivní mapa adres", layout="wide")
 st.title("Interaktivní mapa adres - 25.06.2025")
 
 # === 1. Načtení dat ===
-CSV_SOUBOR = "kombinovane_data_aktualizovane.csv"
+CSV_SOUBOR = "DATA.csv"
 ODDELENI = ";"
 KODOVANI = "utf-8"
 
@@ -23,6 +23,9 @@ df["lon"] = pd.to_numeric(df["lon"], errors='coerce')
 df.loc[df["lat"] == 0, "lat"] = None
 df.loc[df["lon"] == 0, "lon"] = None
 
+# === Nový sloupec pro typ symbolu ===
+df["symbol"] = "kruh"
+df.loc[df["FORMA_UHRADY"].str.lower() == "hotově", "symbol"] = "krizek"
 
 # === 2. Filtrování podle PŘÍZNAK ===
 priznaky = sorted(df["PŘÍZNAK"].dropna().unique())
@@ -49,29 +52,54 @@ priznak2barva = {p: barvy[i % len(barvy)] for i, p in enumerate(priznaky)}
 df_filt = df[df["PŘÍZNAK"].isin(vybrane) & df["lat"].notnull() & df["lon"].notnull()].copy()
 df_filt["barva"] = df_filt["PŘÍZNAK"].map(priznak2barva)
 
+# Přidej ikonová data pro křížek
+icon_url = "https://upload.wikimedia.org/wikipedia/commons/5/55/Black_X.svg"
+df_filt.loc[df_filt["symbol"] == "krizek", "icon_data"] = df_filt.apply(
+    lambda row: {
+        "url": icon_url,
+        "width": 128,
+        "height": 128,
+        "anchorY": 64,
+        "anchorX": 64,
+    } if row["symbol"] == "krizek" else None,
+    axis=1
+)
+
 # === 3. Zobrazení mapy ===
 st.subheader(f"Počet zobrazených bodů: {len(df_filt)}")
+layers = [
+    # Ostatní body (kruh)
+    pdk.Layer(
+        "ScatterplotLayer",
+        data=df_filt[df_filt["symbol"] == "kruh"],
+        get_position='[lon, lat]',
+        get_color='barva',
+        get_radius=500,
+        radiusMinPixels=5,
+        radiusMaxPixels=30,
+        pickable=True,
+    ),
+    # Hotově (černý křížek)
+    pdk.Layer(
+        "IconLayer",
+        data=df_filt[df_filt["symbol"] == "krizek"],
+        get_position='[lon, lat]',
+        get_icon='icon_data',
+        get_size=3,
+        size_scale=15,
+        pickable=True,
+    ),
+]
 st.pydeck_chart(pdk.Deck(
-    map_style='light',
+    map_style='mapbox://styles/mapbox/streets-v11',
     initial_view_state=pdk.ViewState(
         latitude=49.8,
         longitude=15.5,
         zoom=7,
         pitch=0,
     ),
-    layers=[
-        pdk.Layer(
-            'ScatterplotLayer',
-            data=df_filt,
-            get_position='[lon, lat]',
-            get_color='barva',
-            get_radius=500,
-            radiusMinPixels=5,
-            radiusMaxPixels=30,
-            pickable=True,
-        ),
-    ],
-    tooltip={"text": "{NÁZEV}\n{Adresa}\nPŘÍZNAK: {PŘÍZNAK}\nCF: {CF}"}
+    layers=layers,
+    tooltip={"text": "{NÁZEV}\n{Adresa}\nPŘÍZNAK: {PŘÍZNAK}\nCF: {CF}\nFORMA ÚHRADY: {FORMA_UHRADY}"}
 ))
 
 # === 3a. Legenda barev ===
@@ -79,8 +107,10 @@ barva2hex = lambda rgba: '#%02x%02x%02x' % tuple(rgba[:3])
 legend_html = '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;">'
 for p in priznaky:
     legend_html += f'<div style="display:flex;align-items:center;"><div style="width:18px;height:18px;border-radius:50%;background:{barva2hex(priznak2barva[p])};margin-right:6px;"></div>{p}</div>'
+# Přidej legendu pro hotově
+legend_html += '<div style="display:flex;align-items:center;"><img src="https://upload.wikimedia.org/wikipedia/commons/5/55/Black_X.svg" width="18" style="margin-right:6px;">Hotově (forma úhrady)</div>'
 legend_html += '</div>'
-components.html(legend_html, height=40 + 30 * ((len(priznaky)+4)//5))
+components.html(legend_html, height=40 + 30 * ((len(priznaky)+5)//5))
 
 # === 4. Výpis nenalezených adres ===
 nenalezeno = df[df["lat"].isnull() | df["lon"].isnull()]
