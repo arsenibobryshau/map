@@ -32,11 +32,11 @@ priznaky = sorted(df["PŘÍZNAK"].dropna().unique())
 vybrane = st.multiselect("Filtr PŘÍZNAK", priznaky, default=priznaky)
 
 # === 2a. Přiřazení barev jednotlivým příznakům ===
-# Definuj 11 barev (můžeš upravit podle vkusu)
+# Původní barvy (doplňte přesně vaše, pokud jsou jiné)
 barvy = [
-    [0, 180, 60, 160],    # červená
+    [0, 180, 60, 160],    # zelená
     [0, 120, 200, 160],   # modrá
-    [200, 30, 0, 160],    # zelená
+    [200, 30, 0, 160],    # červená
     [255, 140, 0, 160],   # oranžová
     [160, 0, 200, 160],   # fialová
     [255, 215, 0, 160],   # žlutá
@@ -52,23 +52,11 @@ priznak2barva = {p: barvy[i % len(barvy)] for i, p in enumerate(priznaky)}
 df_filt = df[df["PŘÍZNAK"].isin(vybrane) & df["lat"].notnull() & df["lon"].notnull()].copy()
 df_filt["barva"] = df_filt["PŘÍZNAK"].map(priznak2barva)
 
-# Přidej ikonová data pro křížek
-icon_url = "https://upload.wikimedia.org/wikipedia/commons/5/55/Black_X.svg"
-df_filt.loc[df_filt["symbol"] == "krizek", "icon_data"] = df_filt.apply(
-    lambda row: {
-        "url": icon_url,
-        "width": 128,
-        "height": 128,
-        "anchorY": 64,
-        "anchorX": 64,
-    } if row["symbol"] == "krizek" else None,
-    axis=1
-)
-
 # === 3. Zobrazení mapy ===
 st.subheader(f"Počet zobrazených bodů: {len(df_filt)}")
+
+# Vrstva pro běžné body (kruh)
 layers = [
-    # Ostatní body (kruh)
     pdk.Layer(
         "ScatterplotLayer",
         data=df_filt[df_filt["symbol"] == "kruh"],
@@ -79,19 +67,26 @@ layers = [
         radiusMaxPixels=30,
         pickable=True,
     ),
-    # Hotově (černý křížek)
-    pdk.Layer(
-        "IconLayer",
-        data=df_filt[df_filt["symbol"] == "krizek"],
-        get_position='[lon, lat]',
-        get_icon='icon_data',
-        get_size=3,
-        size_scale=15,
-        pickable=True,
-    ),
 ]
+
+# Vrstva pro hotově (křížek jako text)
+if (df_filt["symbol"] == "krizek").any():
+    layers.append(
+        pdk.Layer(
+            "TextLayer",
+            data=df_filt[df_filt["symbol"] == "krizek"],
+            get_position='[lon, lat]',
+            get_text='"✖"',
+            get_color='[0,0,0,255]',
+            get_size=24,
+            get_angle=0,
+            get_alignment_baseline='bottom',
+            pickable=True,
+        )
+    )
+
 st.pydeck_chart(pdk.Deck(
-    map_style='mapbox://styles/mapbox/streets-v11',
+    map_style='mapbox://styles/mapbox/light-v9',
     initial_view_state=pdk.ViewState(
         latitude=49.8,
         longitude=15.5,
@@ -108,7 +103,7 @@ legend_html = '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20
 for p in priznaky:
     legend_html += f'<div style="display:flex;align-items:center;"><div style="width:18px;height:18px;border-radius:50%;background:{barva2hex(priznak2barva[p])};margin-right:6px;"></div>{p}</div>'
 # Přidej legendu pro hotově
-legend_html += '<div style="display:flex;align-items:center;"><img src="https://upload.wikimedia.org/wikipedia/commons/5/55/Black_X.svg" width="18" style="margin-right:6px;">Hotově (forma úhrady)</div>'
+legend_html += '<div style="display:flex;align-items:center;font-size:22px;"><span style="margin-right:6px;">✖</span>Hotově (forma úhrady)</div>'
 legend_html += '</div>'
 components.html(legend_html, height=40 + 30 * ((len(priznaky)+5)//5))
 
@@ -116,5 +111,4 @@ components.html(legend_html, height=40 + 30 * ((len(priznaky)+5)//5))
 nenalezeno = df[df["lat"].isnull() | df["lon"].isnull()]
 if not nenalezeno.empty:
     st.warning(f"Adresy, které se nepodařilo najít ({len(nenalezeno)}):")
-
     st.write(nenalezeno[["NÁZEV", "Adresa", "PŘÍZNAK"]]) 
