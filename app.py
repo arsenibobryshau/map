@@ -5,7 +5,7 @@ import os
 import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Interaktivní mapa adres", layout="wide")
-st.title("Interaktivní mapa adres - 25.06.2025")
+st.title("Interaktivní mapa adres - 06.08.2025, MAPA HOTOVĚ")
 
 # === 1. Načtení dat ===
 CSV_SOUBOR = "DATA_A_RINO.csv"
@@ -112,4 +112,5 @@ if not hotove_df.empty:
         ],
         tooltip={"text": "{NÁZEV}\n{Adresa}\nPŘÍZNAK: {PŘÍZNAK}\nCF: {CF}\nFORMA ÚHRADY: {FORMA_UHRADY}"}
     ))
+
 
