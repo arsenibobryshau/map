@@ -8,7 +8,7 @@ st.set_page_config(page_title="Interaktivní mapa adres", layout="wide")
 st.title("Interaktivní mapa adres - 25.06.2025")
 
 # === 1. Načtení dat ===
-CSV_SOUBOR = "kombinovane_data_aktualizovane.csv"
+CSV_SOUBOR = "DATA_A_RINO.csv"
 ODDELENI = ";"
 KODOVANI = "utf-8"
 
@@ -112,3 +112,4 @@ if not hotove_df.empty:
         ],
         tooltip={"text": "{NÁZEV}\n{Adresa}\nPŘÍZNAK: {PŘÍZNAK}\nCF: {CF}\nFORMA ÚHRADY: {FORMA_UHRADY}"}
     ))
+
