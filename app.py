@@ -70,7 +70,7 @@ if (df_filt["FORMA_UHRADY"] == "Hotově").any():
             'ScatterplotLayer',
             data=df_filt[df_filt["FORMA_UHRADY"] == "Hotově"],
             get_position='[lon, lat]',
-            get_color='[0,0,0,255]',
+            get_color='[0,0,0,120]',
             get_radius=700,
             radiusMinPixels=7,
             radiusMaxPixels=35,
@@ -103,4 +103,5 @@ nenalezeno = df[df["lat"].isnull() | df["lon"].isnull()]
 if not nenalezeno.empty:
     st.warning(f"Adresy, které se nepodařilo najít ({len(nenalezeno)}):")
     st.write(nenalezeno[["NÁZEV", "Adresa", "PŘÍZNAK"]]) 
+
 
