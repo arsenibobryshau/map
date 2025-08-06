@@ -8,7 +8,7 @@ st.set_page_config(page_title="Interaktivní mapa adres", layout="wide")
 st.title("Interaktivní mapa adres - 25.06.2025")
 
 # === 1. Načtení dat ===
-CSV_SOUBOR = "DATA.CSV"
+CSV_SOUBOR = "kombinovane_data_aktualizovane.csv"
 ODDELENI = ";"
 KODOVANI = "utf-8"
 
@@ -23,19 +23,17 @@ df["lon"] = pd.to_numeric(df["lon"], errors='coerce')
 df.loc[df["lat"] == 0, "lat"] = None
 df.loc[df["lon"] == 0, "lon"] = None
 
-# === Nový sloupec pro typ symbolu ===
-df["symbol"] = "kruh"
-df.loc[df["FORMA_UHRADY"] == "Hotově", "symbol"] = "hotove"
 
 # === 2. Filtrování podle PŘÍZNAK ===
 priznaky = sorted(df["PŘÍZNAK"].dropna().unique())
 vybrane = st.multiselect("Filtr PŘÍZNAK", priznaky, default=priznaky)
 
 # === 2a. Přiřazení barev jednotlivým příznakům ===
+# Definuj 11 barev (můžeš upravit podle vkusu)
 barvy = [
-    [0, 180, 60, 160],    # zelená
+    [0, 180, 60, 160],    # červená
     [0, 120, 200, 160],   # modrá
-    [200, 30, 0, 160],    # červená
+    [200, 30, 0, 160],    # zelená
     [255, 140, 0, 160],   # oranžová
     [160, 0, 200, 160],   # fialová
     [255, 215, 0, 160],   # žlutá
@@ -53,36 +51,6 @@ df_filt["barva"] = df_filt["PŘÍZNAK"].map(priznak2barva)
 
 # === 3. Zobrazení mapy ===
 st.subheader(f"Počet zobrazených bodů: {len(df_filt)}")
-
-# Vrstva pro běžné body (kruh)
-layers = [
-    pdk.Layer(
-        "ScatterplotLayer",
-        data=df_filt[df_filt["symbol"] == "kruh"],
-        get_position='[lon, lat]',
-        get_color='barva',
-        get_radius=500,
-        radiusMinPixels=5,
-        radiusMaxPixels=30,
-        pickable=True,
-    ),
-]
-
-# Vrstva pro hotově (černý bod, větší průměr)
-if (df_filt["symbol"] == "hotove").any():
-    layers.append(
-        pdk.Layer(
-            "ScatterplotLayer",
-            data=df_filt[df_filt["symbol"] == "hotove"],
-            get_position='[lon, lat]',
-            get_color='[0,0,0,255]',
-            get_radius=900,
-            radiusMinPixels=8,
-            radiusMaxPixels=40,
-            pickable=True,
-        )
-    )
-
 st.pydeck_chart(pdk.Deck(
     map_style='light',
     initial_view_state=pdk.ViewState(
@@ -91,8 +59,19 @@ st.pydeck_chart(pdk.Deck(
         zoom=7,
         pitch=0,
     ),
-    layers=layers,
-    tooltip={"text": "{NÁZEV}\n{Adresa}\nPŘÍZNAK: {PŘÍZNAK}\nCF: {CF}\nFORMA ÚHRADY: {FORMA_UHRADY}"}
+    layers=[
+        pdk.Layer(
+            'ScatterplotLayer',
+            data=df_filt,
+            get_position='[lon, lat]',
+            get_color='barva',
+            get_radius=500,
+            radiusMinPixels=5,
+            radiusMaxPixels=30,
+            pickable=True,
+        ),
+    ],
+    tooltip={"text": "{NÁZEV}\n{Adresa}\nPŘÍZNAK: {PŘÍZNAK}\nCF: {CF}"}
 ))
 
 # === 3a. Legenda barev ===
@@ -100,14 +79,11 @@ barva2hex = lambda rgba: '#%02x%02x%02x' % tuple(rgba[:3])
 legend_html = '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;">'
 for p in priznaky:
     legend_html += f'<div style="display:flex;align-items:center;"><div style="width:18px;height:18px;border-radius:50%;background:{barva2hex(priznak2barva[p])};margin-right:6px;"></div>{p}</div>'
-# Přidej legendu pro hotově
-legend_html += '<div style="display:flex;align-items:center;font-size:22px;"><span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:#000;margin-right:6px;"></span>Hotově (forma úhrady)</div>'
 legend_html += '</div>'
-components.html(legend_html, height=40 + 30 * ((len(priznaky)+5)//5))
+components.html(legend_html, height=40 + 30 * ((len(priznaky)+4)//5))
 
 # === 4. Výpis nenalezených adres ===
 nenalezeno = df[df["lat"].isnull() | df["lon"].isnull()]
 if not nenalezeno.empty:
     st.warning(f"Adresy, které se nepodařilo najít ({len(nenalezeno)}):")
     st.write(nenalezeno[["NÁZEV", "Adresa", "PŘÍZNAK"]]) 
-
