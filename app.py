@@ -8,7 +8,7 @@ st.set_page_config(page_title="Interaktivní mapa adres", layout="wide")
 st.title("Interaktivní mapa adres - 25.06.2025")
 
 # === 1. Načtení dat ===
-CSV_SOUBOR = "DATA.csv"
+CSV_SOUBOR = "DATA.CSV"
 ODDELENI = ";"
 KODOVANI = "utf-8"
 
@@ -116,4 +116,5 @@ components.html(legend_html, height=40 + 30 * ((len(priznaky)+5)//5))
 nenalezeno = df[df["lat"].isnull() | df["lon"].isnull()]
 if not nenalezeno.empty:
     st.warning(f"Adresy, které se nepodařilo najít ({len(nenalezeno)}):")
+
     st.write(nenalezeno[["NÁZEV", "Adresa", "PŘÍZNAK"]]) 
